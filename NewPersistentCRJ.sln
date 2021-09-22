@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31112.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NewPersistentCRJ", "NewPersistentCRJ.csproj", "{DA822A43-BD0B-4035-AD48-AC638F8B1A6D}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Installer", "Installer\Installer\Installer.vdproj", "{EF91B096-B3BF-4BDF-B89D-4C82B9258229}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA822A43-BD0B-4035-AD48-AC638F8B1A6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA822A43-BD0B-4035-AD48-AC638F8B1A6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA822A43-BD0B-4035-AD48-AC638F8B1A6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA822A43-BD0B-4035-AD48-AC638F8B1A6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF91B096-B3BF-4BDF-B89D-4C82B9258229}.Debug|Any CPU.ActiveCfg = Debug
+		{EF91B096-B3BF-4BDF-B89D-4C82B9258229}.Release|Any CPU.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {169AF656-475A-446A-A1C2-7446B32FCF7B}
+	EndGlobalSection
+EndGlobal
