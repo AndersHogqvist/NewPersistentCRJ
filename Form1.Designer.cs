@@ -36,7 +36,6 @@ namespace NewPersistentCRJ
             this.loadBtn = new System.Windows.Forms.Button();
             this.saveGroup = new System.Windows.Forms.GroupBox();
             this.autoSaveBtn = new System.Windows.Forms.Button();
-            this.connectBtn = new System.Windows.Forms.Button();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.numOfCtrlLabel = new System.Windows.Forms.Label();
@@ -61,7 +60,7 @@ namespace NewPersistentCRJ
             // 
             // exitBtn
             // 
-            this.exitBtn.Location = new System.Drawing.Point(24, 176);
+            this.exitBtn.Location = new System.Drawing.Point(164, 148);
             this.exitBtn.Name = "exitBtn";
             this.exitBtn.Size = new System.Drawing.Size(95, 32);
             this.exitBtn.TabIndex = 3;
@@ -72,7 +71,7 @@ namespace NewPersistentCRJ
             // loadGroup
             // 
             this.loadGroup.Controls.Add(this.loadBtn);
-            this.loadGroup.Location = new System.Drawing.Point(155, 12);
+            this.loadGroup.Location = new System.Drawing.Point(12, 126);
             this.loadGroup.Name = "loadGroup";
             this.loadGroup.Size = new System.Drawing.Size(121, 65);
             this.loadGroup.TabIndex = 7;
@@ -110,22 +109,12 @@ namespace NewPersistentCRJ
             this.autoSaveBtn.UseVisualStyleBackColor = true;
             this.autoSaveBtn.Click += new System.EventHandler(this.autoSaveBtn_Click);
             // 
-            // connectBtn
-            // 
-            this.connectBtn.Location = new System.Drawing.Point(24, 133);
-            this.connectBtn.Name = "connectBtn";
-            this.connectBtn.Size = new System.Drawing.Size(95, 32);
-            this.connectBtn.TabIndex = 9;
-            this.connectBtn.Text = "Connect";
-            this.connectBtn.UseVisualStyleBackColor = true;
-            this.connectBtn.Click += new System.EventHandler(this.connectBtn_Click);
-            // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.numOfCtrlLabel);
             this.groupBox1.Controls.Add(this.randomBtn);
             this.groupBox1.Controls.Add(this.randomLvarsScroll);
-            this.groupBox1.Location = new System.Drawing.Point(155, 84);
+            this.groupBox1.Location = new System.Drawing.Point(151, 12);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(121, 124);
             this.groupBox1.TabIndex = 10;
@@ -163,7 +152,7 @@ namespace NewPersistentCRJ
             // statusLabel
             // 
             this.statusLabel.AutoSize = true;
-            this.statusLabel.Location = new System.Drawing.Point(12, 221);
+            this.statusLabel.Location = new System.Drawing.Point(12, 194);
             this.statusLabel.MinimumSize = new System.Drawing.Size(260, 0);
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(260, 15);
@@ -173,11 +162,10 @@ namespace NewPersistentCRJ
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(292, 245);
+            this.ClientSize = new System.Drawing.Size(284, 219);
             this.ControlBox = false;
             this.Controls.Add(this.statusLabel);
             this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.connectBtn);
             this.Controls.Add(this.loadGroup);
             this.Controls.Add(this.saveGroup);
             this.Controls.Add(this.exitBtn);
@@ -202,7 +190,6 @@ namespace NewPersistentCRJ
         private System.Windows.Forms.GroupBox saveGroup;
         private System.Windows.Forms.Button loadBtn;
         private System.Windows.Forms.Button autoSaveBtn;
-        private System.Windows.Forms.Button connectBtn;
         private System.Windows.Forms.ToolTip toolTip;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label numOfCtrlLabel;
