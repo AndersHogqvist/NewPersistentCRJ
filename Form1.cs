@@ -20,16 +20,14 @@ namespace NewPersistentCRJ
     public partial class Form1 : Form
     {
         private const string APP_NAME = "PersistentCRJ";
-        private const string APP_VERSION = "3.1";
+        private const string APP_VERSION = "3.2";
 
         private FileIniDataParser parser;
-        private IniData ini_data;
+        private IniData ini_data, sim_data;
         private bool auto_save = false;
         private int start_event_no = 0x1FFF0;
         private bool is_online = false;
         private string test_lvar;
-        private string original_data;
-        private bool is_dirty = false;
 
         private Dictionary<string, int> random_lvars;
 
@@ -49,6 +47,7 @@ namespace NewPersistentCRJ
 
             status_timer = new System.Timers.Timer(2000);
             status_timer.AutoReset = false;
+            status_timer.Elapsed += StatusTextRemoveCB;
 
             this.Text = APP_NAME + " " + APP_VERSION + " (not connected)";
             this.Update();
@@ -61,8 +60,7 @@ namespace NewPersistentCRJ
 
             toolTip.SetToolTip(this.saveBtn, "Save the current state to the file");
             toolTip.SetToolTip(this.autoSaveBtn, "If autosave is enabled the state will be saved to file whenever a value is changed");
-            toolTip.SetToolTip(this.connectBtn, "Manually connect to the sim");
-            toolTip.SetToolTip(this.loadBtn, "Load a saved state");
+            toolTip.SetToolTip(this.loadBtn, "Load state from file");
             toolTip.SetToolTip(this.randomBtn, "Set the controls in a random state");
             toolTip.SetToolTip(this.randomLvarsScroll, "The number of controls to randomize");
             toolTip.SetToolTip(this.exitBtn, "Exit PersistentCRJ");
@@ -70,8 +68,8 @@ namespace NewPersistentCRJ
             try
             {
                 ini_data = parser.ReadFile("lvars.ini");
-
-                original_data = ini_data.ToString();
+                sim_data = new IniData();
+                sim_data.Merge(ini_data);
 
                 Int32.TryParse(ini_data["Config"]["Start_event_number"], out start_event_no);
 
@@ -107,7 +105,6 @@ namespace NewPersistentCRJ
             {
                 fsuipcw_init(this.Handle, start_event_no, null);
                 fsuipcw_registerUpdateCallback(ModuleUpdatedCB);
-                fsuipcw_registerLvarUpdateCallbackByName(LvarUpdateCB);
                 fsuipcw_start();
             }
             catch (DllNotFoundException e)
@@ -142,7 +139,7 @@ namespace NewPersistentCRJ
                     this.Text = APP_NAME + " " + APP_VERSION;
                     this.Update();
 
-                    connectBtn.Enabled = false;
+                    saveBtn.Enabled = true;
                     autoSaveBtn.Enabled = true;
                     loadBtn.Enabled = true;
                     randomBtn.Enabled = true;
@@ -153,7 +150,7 @@ namespace NewPersistentCRJ
                     this.Text = APP_NAME + " " + APP_VERSION + " (not connected)";
                     this.Update();
 
-                    connectBtn.Enabled = true;
+                    saveBtn.Enabled = false;
                     autoSaveBtn.Enabled = false;
                     loadBtn.Enabled = false;
                     randomBtn.Enabled = false;
@@ -176,43 +173,10 @@ namespace NewPersistentCRJ
             }
             else
             {
-                if (status_timer.Enabled)
-                {
-                    status_timer.Enabled = false;
-                }
+                status_timer.Stop();
                 statusLabel.Text = status_text;
                 statusLabel.Update();
-                status_timer.Elapsed += StatusTextRemoveCB;
-                status_timer.AutoReset = true;
-                status_timer.Enabled = true;
-            }
-        }
-
-        /**
-         * Function to enable/disable save button based on if there's something to save
-         */
-        delegate void ToggleSaveBtnCB();
-        private void ToggleSaveBtn()
-        {
-            if (this.InvokeRequired)
-            {
-                ToggleSaveBtnCB cb = new ToggleSaveBtnCB(ToggleSaveBtn);
-                this.Invoke(cb, new object[] { });
-            }
-            else
-            {
-                saveBtn.Enabled = is_dirty;
-
-                if (is_dirty)
-                {
-                    saveBtn.Text = "Save to file";
-                }
-                else
-                {
-                    saveBtn.Text = "State saved";
-                }
-
-                saveBtn.Update();
+                status_timer.Start();
             }
         }
 
@@ -222,29 +186,36 @@ namespace NewPersistentCRJ
          */
         private bool check_fsuipcw_running()
         {
-            if (is_online)
-            {
-                if (fsuipcw_getLvarIdFromName(test_lvar) < 0)
-                {
-                    is_online = false;
-                }
-            }
-
+            is_online = fsuipcw_getLvarIdFromName(test_lvar) >= 0;
             SetOnlineOffline();
 
             return is_online;
         }
 
         /**
-         * Saves to file, copies ini_data to original_data, sets is_dirty to false
-         * and toggles saveBtn
+         * Saves sim_data to file
          */
         private void save_to_file()
         {
-            parser.WriteFile("lvars.ini", ini_data);
-            original_data = ini_data.ToString();
-            is_dirty = false;
-            ToggleSaveBtn();
+            parser.WriteFile("lvars.ini", sim_data);
+        }
+
+        /**
+         * Reads the state of each Lvar into sim_data;
+         */
+        private void get_sim_state(bool register_lvars)
+        {
+            foreach (KeyData key in ini_data["LVars"])
+            {
+
+                if (register_lvars)
+                {
+                    fsuipcw_flagLvarForUpdateCallbackByName(key.KeyName);
+                }
+
+                double sim_val = fsuipcw_getLvarFromName(key.KeyName);
+                sim_data["LVars"][key.KeyName] = ((int)sim_val).ToString();
+            }
         }
 
         /**
@@ -258,43 +229,9 @@ namespace NewPersistentCRJ
 
             SetOnlineOffline();
 
-            try
-            {
-                Dictionary<string, double> values = new Dictionary<string, double>();
-                fsuipcw_getLvarValues(values.Add);
+            fsuipcw_registerLvarUpdateCallbackByName(LvarUpdateCB);
 
-                foreach (KeyData key in ini_data["LVars"])
-                {
-                    fsuipcw_flagLvarForUpdateCallbackByName(key.KeyName);
-
-                    if (!is_dirty)
-                    {
-                        int stored_value;
-                        Int32.TryParse(key.Value, out stored_value);
-
-                        double value;
-                        if (values.TryGetValue(key.KeyName, out value))
-                        {
-                            if (stored_value != (int)value)
-                            {
-                                SetStatusLabelText();
-                                is_dirty = true;
-                            }
-                        }
-                    }
-                }
-                ToggleSaveBtn();
-            }
-            catch (ParsingException e)
-            {
-                MessageBox.Show("Failed to register LVar update callback: \n" + e.Message);
-                Process[] processes = Process.GetProcessesByName("PersistentCRJ");
-                fsuipcw_end();
-                foreach (Process process in processes)
-                {
-                    process.Kill();
-                }
-            }
+            get_sim_state(true);
         }
 
         /**
@@ -303,19 +240,21 @@ namespace NewPersistentCRJ
          */
         void LvarUpdateCB(string[] lvarNames, double[] values)
         {
+            if (lvarNames.Length < 1 || values.Length < 1)
+            {
+                return;
+            }
+
+            string name = lvarNames[0];
             int value = (int)values[0];
-            ini_data["LVars"][lvarNames[0]] = value.ToString();
+
+            sim_data["LVars"][name] = value.ToString();
 
             if (auto_save)
             {
-                status_text = "Auto saved '" + lvarNames[0] + "'";
-                SetStatusLabelText();
                 save_to_file();
-            }
-            else
-            {
-                is_dirty = ini_data.ToString() != original_data;
-                ToggleSaveBtn();
+                status_text = "Auto saved '" + name + "'";
+                SetStatusLabelText();
             }
         }
 
@@ -333,7 +272,6 @@ namespace NewPersistentCRJ
          */
         void StatusTextRemoveCB(object sender, EventArgs e)
         {
-            status_timer.Enabled = false;
             status_text = "";
             SetStatusLabelText();
         }
@@ -359,21 +297,6 @@ namespace NewPersistentCRJ
          */
         private void exitBtn_Click(object sender, EventArgs e)
         {
-            if (check_fsuipcw_running() == false)
-            {
-                fsuipcw_end();
-                System.Windows.Forms.Application.Exit();
-            }
-
-            if (auto_save == false && is_dirty)
-            {
-                DialogResult dialogResult = MessageBox.Show("Do you want to save current the state to file?", "PersistentCRJ", MessageBoxButtons.YesNo);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    parser.WriteFile("lvars.ini", ini_data);
-                }
-            }
-
             fsuipcw_end();
             System.Windows.Forms.Application.Exit();
         }
@@ -389,34 +312,21 @@ namespace NewPersistentCRJ
                 return;
             }
 
-            IniData new_ini_data = parser.ReadFile("lvars.ini");
+            ini_data = new IniData();
+            ini_data = parser.ReadFile("lvars.ini");
 
-            foreach (KeyData data in new_ini_data["LVars"])
+            foreach (KeyData data in ini_data["LVars"])
             {
-                try
+                int id = fsuipcw_getLvarIdFromName(data.KeyName);
+                if (id >= 0)
                 {
-                    int id = fsuipcw_getLvarIdFromName(data.KeyName);
-                    if (id >= 0)
-                    {
-                        fsuipcw_setLvarAsShort(id, Int32.Parse(data.Value));
-                    }
-                }
-                catch (FormatException ex)
-                {
-                    MessageBox.Show("Failed to parse " + data.KeyName + ": " + ex.Message);
-                    return;
-                }
-                catch (ArgumentNullException ex)
-                {
-                    MessageBox.Show("Failed to parse " + data.KeyName + ": " + ex.Message);
-                    return;
+                    fsuipcw_setLvarAsShort(id, Int32.Parse(data.Value));
                 }
             }
 
-            ini_data = new_ini_data;
-            original_data = ini_data.ToString();
-            is_dirty = false;
-            ToggleSaveBtn();
+            sim_data = new IniData();
+            sim_data.Merge(ini_data);
+
             status_text = "State loaded";
             SetStatusLabelText();
         }
@@ -468,7 +378,6 @@ namespace NewPersistentCRJ
                 }
             }
 
-
             status_text = randomLvarsScroll.Value.ToString() + " controls randomized";
             SetStatusLabelText();
         }
@@ -495,18 +404,9 @@ namespace NewPersistentCRJ
                 autoSaveBtn.ForeColor = original_color;
                 loadBtn.Enabled   = true;
                 randomBtn.Enabled = true;
+                saveBtn.Enabled = true;
                 randomLvarsScroll.Enabled = true;
-                ToggleSaveBtn();
             }
-        }
-
-        /**
-         * Connect button callback
-         */
-        private void connectBtn_Click(object sender, EventArgs e)
-        {
-            fsuipcw_start();
-            fsuipcw_reload();
         }
 
         /**
@@ -562,6 +462,9 @@ namespace NewPersistentCRJ
 
         [DllImport("FSUIPC_WAPID.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void fsuipcw_setLvarAsShort(int lvarID, int value);
+
+        [DllImport("FSUIPC_WAPID.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern double fsuipcw_getLvarFromName(string lvarName);
 
     }
 }
